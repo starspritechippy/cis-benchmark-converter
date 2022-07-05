@@ -5,7 +5,6 @@ import re
 # i.e. 12.1.2
 # Group 1: dot-separated numbers
 # Group 2: subject line
-old_dot_separated_pattern = re.compile(r"^([\d+\.]*\d+) (.*) ?\.\.")
 dot_separated_pattern = re.compile(r"^([\d+\.]*\d+) ([^.]*) ?\.* (\d+) ?$")
 
 # Matches, if the line ends with a dot, then a number
