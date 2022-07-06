@@ -136,6 +136,7 @@ def create_csv(content: str, output_file: Optional[str | pathlib.Path]):
     global include_page_numbers
     global csv_delimiter
     global is_full
+    global search
 
     if output_file.exists() and not skip_yn:
         if not yes_no_prompt("{} already exists. Overwrite it? [y/N] ".format(output_file), default=False):
@@ -156,9 +157,17 @@ def create_csv(content: str, output_file: Optional[str | pathlib.Path]):
 
     lines = get_points(content, include_page_numbers)
 
+    if search:
+        terms = [s.strip() for s in search.split(",")]
+        def get_filtered(line, terms):
+            return any(f"({term})" in line[1] for term in terms)
+
+        lines = filter(lambda x: get_filtered(x, terms), lines)
+
+
     # Smart pass
     # lines is an iterable of iterables
-    if not is_full:
+    elif not is_full:
         lines = list(lines)
         lines_smart = []
 
@@ -195,6 +204,7 @@ def main():
     parser = argparse.ArgumentParser(description="Convert A CIS Benchmark PDF file to CSV")
     parser.add_argument("filename", metavar="FILE", type=pathlib.Path)
     parser.add_argument("--full", "-f", dest="is_full", action="store_true", help="Convert the entire table of contents to a CSV file, rather than just a bit of it")
+    parser.add_argument("--search", "-s", dest="search", action="store", type=str, help="If given, only output lines that include the search term(s) in parantheses, i.e. \"-s L1,L2\" matches (L1) or (L2)")
     parser.add_argument("-y", dest="skip_yn", action="store_true", help="Automatically reply \"y\" for yes/no prompts.")
     parser.add_argument("--include-headers", dest="include_headers", action="store_true", help="In the generated CSV file, include a row explaining the fields")
     parser.add_argument("--include-page-numbers", dest="include_page_numbers", action="store_true", help="In the generated CSV file, include the page numbers.")
@@ -203,7 +213,13 @@ def main():
 
     args = parser.parse_args()
     global filename
+    filename = args.filename
+
     global output_path
+    output_path = args.output_path
+
+    global search 
+    search = args.search
 
     global is_full
     is_full = args.is_full
@@ -220,7 +236,6 @@ def main():
     global csv_delimiter
     csv_delimiter = args.csv_delimiter
 
-    filename = args.filename
     if not filename.exists:
         print(str(filename), "does not exist.", file=sys.stderr)
         exit(1)
@@ -230,7 +245,6 @@ def main():
 
     # This now holds the entire table of contents
     contents = extract_table_of_contents(filename)
-    output_path = args.output_path
 
     if not output_path:
         output_path = filename
