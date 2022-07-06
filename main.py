@@ -51,22 +51,28 @@ def extract_table_of_contents(filename: str | pathlib.Path) -> str:
     try:
         while page := next(pages):
             page: LTPage
+            # Some benchmarks use tabs in place of spaces, we can safely replace those
             content = get_page_content(page).replace("\t", " ")
+
             if "contents" in content.lower():
                 start = index
                 lines = content.splitlines()
+
                 for line in lines[1:]:
                     if not ("contents" in line.lower() or "use" in line.lower()):
                         first_point_line = line
                         first_bullet_point = first_point_line[0:first_point_line.find("..")].strip()
                         break
+
                 if not first_bullet_point:
                     print("Could not find table of contents. Please report.", file=sys.stderr)
                     exit(1)
+
             elif start != 0 and first_bullet_point in content:
                 break
             pages_content.append(content)
             index += 1
+
     except StopIteration:
         print("Could not find table of contents. Please report.", file=sys.stderr)
         exit(1)
@@ -138,6 +144,7 @@ def create_csv(content: str, output_file: Optional[str | pathlib.Path]):
     if not output_file:
         # this really is only a fallback, this should always be a given
         output_file = pathlib.Path("out.pdf")
+
     try:
         file = open(output_file, "w")
     except PermissionError:
@@ -146,6 +153,7 @@ def create_csv(content: str, output_file: Optional[str | pathlib.Path]):
     except FileNotFoundError:
         print("Couldn't create the file {}. Does the folder exist?".format(output_file))
         exit(1)
+
     lines = get_points(content, include_page_numbers)
 
     # Smart pass
@@ -153,6 +161,7 @@ def create_csv(content: str, output_file: Optional[str | pathlib.Path]):
     if not is_full:
         lines = list(lines)
         lines_smart = []
+
         for idx, item in enumerate(lines):
             depth = len(item[0].split("."))
             try:
@@ -163,29 +172,26 @@ def create_csv(content: str, output_file: Optional[str | pathlib.Path]):
                 else:
                     depth = next_depth
                     lines_smart.append(item)
-                
+
             except IndexError:
                 lines_smart.append(item)
                 pass
 
         lines = lines_smart
-    
+
     writer = csv.writer(file, delimiter=csv_delimiter)
+
     if include_headers:
         if include_page_numbers:
             writer.writerow(["Point", "Description", "Page Number"])
         else:
             writer.writerow(["Point", "Description"])
+
     writer.writerows(lines)
     file.close()
     return
 
 def main():
-    # python main.py [OPTIONS] [FILE]
-    # Options:
-    #   --full, -f      Convert the entire table of contents to a CSV file, rather than just a bit of it
-    #   --output, -o    Specify an output path. By default, the original file name is used, with the .csv extension
-
     parser = argparse.ArgumentParser(description="Convert A CIS Benchmark PDF file to CSV")
     parser.add_argument("filename", metavar="FILE", type=pathlib.Path)
     parser.add_argument("--full", "-f", dest="is_full", action="store_true", help="Convert the entire table of contents to a CSV file, rather than just a bit of it")
@@ -197,21 +203,22 @@ def main():
 
     args = parser.parse_args()
     global filename
+    global output_path
+
     global is_full
     is_full = args.is_full
+
     global skip_yn
     skip_yn = args.skip_yn
+
     global include_headers
     include_headers = args.include_headers
+
     global include_page_numbers
     include_page_numbers = args.include_page_numbers
+
     global csv_delimiter
     csv_delimiter = args.csv_delimiter
-    global output_path
-    # use as args.filename, args.is_full, args.output_path
-    # args.filename is required; it's a pathlib.Path object
-    # args.is_full is a boolean indicating whether to output the entire ToC or only the "necessary" stuff
-    # args.output_path signifies the optional desired output path
 
     filename = args.filename
     if not filename.exists:
@@ -223,12 +230,12 @@ def main():
 
     # This now holds the entire table of contents
     contents = extract_table_of_contents(filename)
-    # with open("debug.txt", "w") as File:
-    #     File.write(contents)
     output_path = args.output_path
+
     if not output_path:
         output_path = filename
         output_path = pathlib.Path(str(filename)[:-3] + "csv")
+
     create_csv(contents, output_path)
     return 0
 
