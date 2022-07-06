@@ -67,7 +67,6 @@ def extract_table_of_contents(filename: str | pathlib.Path) -> str:
                 break
             pages_content.append(content)
             index += 1
-            # pages_content.append(get_page_content(page))
     except StopIteration:
         print("Could not find table of contents. Please report.", file=sys.stderr)
         exit(1)
@@ -108,12 +107,12 @@ def extract_table_of_contents(filename: str | pathlib.Path) -> str:
 
 def num_point(line: str):
     groups = dot_separated_pattern.match(line).groups()
-    return groups[0].strip(), groups[1].strip(), groups[2].strip()
+    return groups[0].strip(), groups[1].strip(". "), groups[2].strip()
 
 
 def num_point_no_page(line: str):
     groups = dot_separated_pattern.match(line).groups()
-    return groups[0].strip(), groups[1].strip()
+    return groups[0].strip(), groups[1].strip(". ")
 
 
 def get_points(text: str, include_page_numbers: bool = True):

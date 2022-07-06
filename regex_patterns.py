@@ -5,12 +5,11 @@ import re
 # i.e. 12.1.2
 # Group 1: dot-separated numbers
 # Group 2: subject line
-dot_separated_pattern = re.compile(r"^([\d+\.]*\d+) ([^.]*) ?\.* (\d+) ?$")
+dot_separated_pattern = re.compile(r"^([\d+\.]*\d+) (.*?) ?(\d+) ?$")
 
-# Matches, if the line ends with a dot, then a number
-# in other words, when a line has a referenced page number at the end
+# Matches if the end of a line features a page number
 # Used for filtering
-line_end_pattern = re.compile(r"\. \d+ $")
+line_end_pattern = re.compile(r"\d+ ?$")
 
 # Matches, when the line contains a current page indicator
 # Used for filtering
