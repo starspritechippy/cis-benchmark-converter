@@ -54,7 +54,7 @@ def extract_table_of_contents(filename: str | pathlib.Path) -> str:
             # Some benchmarks use tabs in place of spaces, we can safely replace those
             content = get_page_content(page).replace("\t", " ")
 
-            if "contents" in content.lower():
+            if "contents" in content.lower() and not start:
                 start = index
                 lines = content.splitlines()
 
@@ -196,7 +196,7 @@ def create_csv(content: str, output_file: Optional[str | pathlib.Path]):
         else:
             writer.writerow(["Point", "Description"])
 
-    writer.writerows(lines)
+    writer.writerows(lines) # TODO fix
     file.close()
     return
 
