@@ -6,6 +6,7 @@ from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTPage, LTTextContainer
 from regex_patterns import dot_separated_pattern, line_end_pattern, page_no_pattern
 from filetype import guess
+from io import StringIO
 import csv
 
 
@@ -146,14 +147,16 @@ def create_csv(content: str, output_file: Optional[str | pathlib.Path]):
         # this really is only a fallback, this should always be a given
         output_file = pathlib.Path("out.pdf")
 
-    try:
-        file = open(output_file, "w")
-    except PermissionError:
-        print("Couldn't open", str(output_file), file=sys.stderr)
-        exit(1)
-    except FileNotFoundError:
-        print("Couldn't create the file {}. Does the folder exist?".format(output_file))
-        exit(1)
+    # try:
+    #     file = open(output_file, "w")
+    # except PermissionError:
+    #     print("Couldn't open", str(output_file), file=sys.stderr)
+    #     exit(1)
+    # except FileNotFoundError:
+    #     print("Couldn't create the file {}. Does the folder exist?".format(output_file))
+    #     exit(1)
+
+    str_buffer = StringIO()
 
     lines = get_points(content, include_page_numbers)
 
@@ -188,7 +191,7 @@ def create_csv(content: str, output_file: Optional[str | pathlib.Path]):
 
         lines = lines_smart
 
-    writer = csv.writer(file, delimiter=csv_delimiter)
+    writer = csv.writer(str_buffer, delimiter=csv_delimiter)
 
     if include_headers:
         if include_page_numbers:
@@ -197,7 +200,17 @@ def create_csv(content: str, output_file: Optional[str | pathlib.Path]):
             writer.writerow(["Point", "Description"])
 
     writer.writerows(lines) # TODO fix
-    file.close()
+    
+    str_buffer.seek(0)
+
+    final_text = str_buffer.read()
+    final_lines = final_text.splitlines()
+    fixed_lines = [line + "\n" for line in final_lines if line.strip()]
+
+    with open(output_file, "w") as File:
+        File.writelines(fixed_lines)
+
+    str_buffer.close()
     return
 
 def main():
